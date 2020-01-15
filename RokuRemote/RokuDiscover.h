@@ -30,6 +30,7 @@ class RokuDiscover
 
   private:
     WiFiUDP m_UDPClient;
+    char m_RspBuffer[UDP_TX_PACKET_MAX_SIZE];
 
     bool m_bInDiscovery;
     uint32_t m_DiscoveryTimeout, m_DiscoveryStarted;

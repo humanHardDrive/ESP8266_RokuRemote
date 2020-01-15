@@ -43,5 +43,10 @@ void RokuDiscover::stopDiscovery()
 
 void RokuDiscover::doDiscovery()
 {
+  int packetSize = m_UDPClient.parsePacket();
 
+  if(packetSize)
+  {
+    m_UDPClient.read(m_RspBuffer, UDP_TX_PACKET_MAX_SIZE);
+  }
 }
