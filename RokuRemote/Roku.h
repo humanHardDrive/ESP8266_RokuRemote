@@ -2,6 +2,7 @@
 #define __ROKU_H__
 
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
 
 #include <map>
 
@@ -21,7 +22,7 @@ class Roku
     uint8_t m_IP[4];
     uint16_t m_Port;
 
-    bool m_bIsConnected;
+    WiFiClient m_Client;
 };
 
 #endif
