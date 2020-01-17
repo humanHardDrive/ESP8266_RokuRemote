@@ -18,7 +18,7 @@ void RokuDiscover::update()
   {
     doDiscovery();
 
-    if((millis() - m_DiscoveryStarted) > m_DiscoveryTimeout)
+    if ((millis() - m_DiscoveryStarted) > m_DiscoveryTimeout)
       m_bInDiscovery = false;
   }
 }
@@ -48,7 +48,59 @@ void RokuDiscover::doDiscovery()
   if (packetSize)
   {
     Serial.println("PACKET!");
-    m_UDPClient.read(m_RspBuffer, UDP_TX_PACKET_MAX_SIZE);
+    int bytesRead = m_UDPClient.read(m_RspBuffer, UDP_TX_PACKET_MAX_SIZE);
     Serial.println(m_RspBuffer);
+    responseValid(m_RspBuffer, bytesRead);
   }
+}
+
+void RokuDiscover::parseResponse(char* buf, size_t len)
+{
+
+}
+
+bool RokuDiscover::responseValid(char* buf, size_t len)
+{
+  /*Find the HTTP response*/
+  int n = strfnd(buf, "HTTP", len, 0);
+  if(n >= 0)
+  {
+    Serial.print("HTTP/");
+    Serial.println(atof(buf + n + 5));
+
+    /*Find the http response code*/
+    n = strfnd(buf, " ", len, 0);
+    int httpCode = atoi(buf + n + 1);
+
+    /*HTTP OK*/
+    Serial.print("HTTP ");
+    Serial.println(httpCode);
+    if(httpCode == 200)
+      return true;
+  }
+
+  return false;
+}
+
+int RokuDiscover::strfnd(char* search, char* match, size_t len, size_t offset)
+{
+  int strStart = -1;
+  size_t i = 0, matchI = 0;
+
+  for (i = offset; i < len; i++)
+  {
+    if (match[matchI] == '\0')
+      return strStart;
+
+    if (search[i] == match[matchI])
+    {
+      matchI++;
+      if (strStart < 0)
+        strStart = i;
+    }
+    else
+      matchI = 0;
+  }
+
+  return -1;
 }

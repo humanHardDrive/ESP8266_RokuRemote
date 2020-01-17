@@ -33,6 +33,10 @@ class RokuDiscover
     }
 
   private:
+    void parseResponse(char* buf, size_t len);
+    bool responseValid(char* buf, size_t len);
+    int strfnd(char* search, char* match, size_t len, size_t offset);
+  
     WiFiUDP m_UDPClient;
     char m_RspBuffer[UDP_TX_PACKET_MAX_SIZE];
 
