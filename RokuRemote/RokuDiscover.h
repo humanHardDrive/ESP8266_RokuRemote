@@ -11,6 +11,7 @@ struct RokuInfo
 {
   IPAddress address;
   uint16_t port;
+  char USN[16];
 };
 
 class RokuDiscover
@@ -33,8 +34,10 @@ class RokuDiscover
     }
 
   private:
-    void parseResponse(char* buf, size_t len);
     bool responseValid(char* buf, size_t len);
+    void getConnectionInfo(char* buf, size_t len, IPAddress* pAddress, uint16_t* pPort);
+    void getUSN(char* buf, size_t len, char* usn);
+    
     int strfnd(char* search, char* match, size_t len, size_t offset);
   
     WiFiUDP m_UDPClient;

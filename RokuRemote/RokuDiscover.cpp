@@ -47,39 +47,56 @@ void RokuDiscover::doDiscovery()
 
   if (packetSize)
   {
-    Serial.println("PACKET!");
     int bytesRead = m_UDPClient.read(m_RspBuffer, UDP_TX_PACKET_MAX_SIZE);
-    Serial.println(m_RspBuffer);
-    responseValid(m_RspBuffer, bytesRead);
+
+    if (responseValid(m_RspBuffer, bytesRead))
+    {
+      RokuInfo rokuInfo;
+      getConnectionInfo(m_RspBuffer, bytesRead, &rokuInfo.address, &rokuInfo.port);
+      getUSN(m_RspBuffer, bytesRead, rokuInfo.USN);
+    }
   }
-}
-
-void RokuDiscover::parseResponse(char* buf, size_t len)
-{
-
 }
 
 bool RokuDiscover::responseValid(char* buf, size_t len)
 {
   /*Find the HTTP response*/
   int n = strfnd(buf, "HTTP", len, 0);
-  if(n >= 0)
+  if (n >= 0)
   {
-    Serial.print("HTTP/");
-    Serial.println(atof(buf + n + 5));
-
     /*Find the http response code*/
     n = strfnd(buf, " ", len, 0);
     int httpCode = atoi(buf + n + 1);
 
     /*HTTP OK*/
-    Serial.print("HTTP ");
-    Serial.println(httpCode);
-    if(httpCode == 200)
+    if (httpCode == 200)
       return true;
   }
 
   return false;
+}
+
+void RokuDiscover::getConnectionInfo(char* buf, size_t len, IPAddress* pAddress, uint16_t* pPort)
+{
+  /*Find the location info*/
+  int n = strfnd(buf, "LOCATION:", len, 0);
+  if (n >= 0)
+  {
+    int ipBuf[4];
+    int portBuf;
+    sscanf(buf + n, "LOCATION: http://%d.%d.%d.%d:%d", &ipBuf[0], &ipBuf[1], &ipBuf[2], &ipBuf[3], &portBuf);
+
+    *pAddress = IPAddress(ipBuf[0], ipBuf[1], ipBuf[2], ipBuf[3]);
+    *pPort = portBuf;
+  }
+}
+
+void RokuDiscover::getUSN(char* buf, size_t len, char* usn)
+{
+  /*Find the USN info*/
+  int n = strfnd(buf, "USN:", len, 0);
+  if(n >= 0)
+    sscanf(buf + n, "USN: uuid:roku:ecp:%s", usn);
 }
 
 int RokuDiscover::strfnd(char* search, char* match, size_t len, size_t offset)
