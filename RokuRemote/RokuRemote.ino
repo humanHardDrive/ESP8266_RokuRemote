@@ -28,6 +28,7 @@ bool bConnectedToAP = false;
 
 ConnectionInfo savedConnectionInfo;
 NetworkHelper helper(sHelperNetworkServerName);
+RokuDiscover discoverer;
 
 void UpdateConnectionInfo(const char* ssid, const char* password)
 {
@@ -177,5 +178,21 @@ void setup()
 
 void loop()
 { 
+  if(Serial.available())
+  {
+    switch(Serial.read())
+    {
+      case 'D':
+      case 'd':
+      if(!discoverer.isInDiscovery())
+      {
+        Serial.println("Starting discovery...");
+        discoverer.startDiscovery(5000);
+      }
+      break;
+    }
+  }
+
+  discoverer.update();
   helper.background();
 }

@@ -1,15 +1,15 @@
 #include "RokuDiscover.h"
 
 const char* DISCOVERY_REQUEST = "M-SEARCH * HTTP/1.1\r\n"
-                                "Host: 239.255.255.250:1900\r\n"
-                                "Man: \"ssdp:discover\"\r\n"
+                                "HOST: 239.255.255.250:1900\r\n"
+                                "MAN: \"ssdp:discover\"\r\n"
                                 "ST: roku:ecp\r\n\r\n";
 
 RokuDiscover::RokuDiscover() :
   m_bInDiscovery(false),
   m_nDiscoveredRoku(0)
 {
-
+  m_UDPClient.begin(1900);
 }
 
 void RokuDiscover::update()
@@ -18,7 +18,7 @@ void RokuDiscover::update()
   {
     doDiscovery();
 
-    if ((millis() - m_DiscoveryStarted) > m_DiscoveryTimeout)
+    if((millis() - m_DiscoveryStarted) > m_DiscoveryTimeout)
       m_bInDiscovery = false;
   }
 }
@@ -45,8 +45,10 @@ void RokuDiscover::doDiscovery()
 {
   int packetSize = m_UDPClient.parsePacket();
 
-  if(packetSize)
+  if (packetSize)
   {
+    Serial.println("PACKET!");
     m_UDPClient.read(m_RspBuffer, UDP_TX_PACKET_MAX_SIZE);
+    Serial.println(m_RspBuffer);
   }
 }

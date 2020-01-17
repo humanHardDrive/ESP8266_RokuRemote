@@ -28,6 +28,10 @@ class RokuDiscover
       return m_nDiscoveredRoku;
     }
 
+    bool isInDiscovery() {
+      return m_bInDiscovery;
+    }
+
   private:
     WiFiUDP m_UDPClient;
     char m_RspBuffer[UDP_TX_PACKET_MAX_SIZE];
