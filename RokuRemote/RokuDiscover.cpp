@@ -51,9 +51,11 @@ void RokuDiscover::doDiscovery()
 
     if (responseValid(m_RspBuffer, bytesRead))
     {
-      RokuInfo rokuInfo;
-      getConnectionInfo(m_RspBuffer, bytesRead, &rokuInfo.address, &rokuInfo.port);
-      getUSN(m_RspBuffer, bytesRead, rokuInfo.USN);
+      RokuInfo *pRokuInfo = &m_DiscoveredRoku[m_nDiscoveredRoku];
+      m_nDiscoveredRoku++;
+      
+      getConnectionInfo(m_RspBuffer, bytesRead, &(pRokuInfo->address), &(pRokuInfo->port));
+      getUSN(m_RspBuffer, bytesRead, pRokuInfo->USN);
     }
   }
 }

@@ -190,6 +190,17 @@ void loop()
         discoverer.startDiscovery(5000);
       }
       break;
+
+      case 'L':
+      case 'l':
+      for(uint8_t i = 0; i < discoverer.getNumDiscovered(); i++)
+      {
+        RokuInfo* pRokuInfo = discoverer.getRokuInfo(i);
+        Serial.println(pRokuInfo->USN);
+        Serial.print(pRokuInfo->address); Serial.print(':'); Serial.println(pRokuInfo->port);
+        Serial.println();
+      }
+      break;
     }
   }
 
