@@ -59,7 +59,7 @@ void SimpleMenu::doMenu(char c)
         Serial.println(pOption->sDisplayString);
         Serial.println();
         
-        if (pOption->fn(c, pOption->pData))
+        if (pOption->fn('\0', pOption->pData))
         {
           /*If it returns true, then it needs to be run more*/
           m_pOptionFn = pOption->fn;

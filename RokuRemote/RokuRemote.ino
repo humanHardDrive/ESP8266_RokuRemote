@@ -17,7 +17,17 @@ struct ConnectionInfo
   char SSID[32];
   char password[32];
 
+  byte rokuIP[4];
+  uint16_t rokuPort;
+
   uint16_t checksum;
+};
+
+struct SelectRoku
+{
+  RokuDiscover* pDiscover;
+  Roku* pRoku;
+  ConnectionInfo* pInfo;  
 };
 
 const char* sHelperNetworkServerName = "networkhelper"; //Name for the DNS
@@ -30,14 +40,19 @@ bool bConnectedToAP = false;
 ConnectionInfo savedConnectionInfo;
 NetworkHelper helper(sHelperNetworkServerName);
 RokuDiscover discoverer;
+Roku roku;
+
+SelectRoku selectData = {&discoverer, &roku, &savedConnectionInfo};
 
 bool menu_StartDiscovery(char c, void* pData);
 bool menu_ListDiscovered(char c, void* pData);
+bool menu_SelectRoku(char c, void* pData);
 
 MenuOption optionList[] =
 {
   {'d', "Start Discovery", menu_StartDiscovery, &discoverer},
   {'l', "List discovered", menu_ListDiscovered, &discoverer},
+  {'s', "Select Roku", menu_SelectRoku, &selectData},
   {'\0', "", NULL, NULL}
 };
 
@@ -111,7 +126,7 @@ void ResetConnectionInfo(ConnectionInfo* info)
 void setup()
 {
   delay(1000);
-  
+
   EEPROM.begin(sizeof(ConnectionInfo));
 
   Serial.begin(115200);
@@ -178,12 +193,12 @@ void setup()
   //Setup lambda function to handle network change from helper
   helper.onNetworkChange(
     [](String ssid, String password)
-    {
-      //Update the connection info in EEPROM
-      UpdateConnectionInfo(ssid.c_str(), password.c_str());
-      //Use the watchdog to reset the device
-      SoftReset();
-    });
+  {
+    //Update the connection info in EEPROM
+    UpdateConnectionInfo(ssid.c_str(), password.c_str());
+    //Use the watchdog to reset the device
+    SoftReset();
+  });
 
   //Start the network helper
   helper.start();
@@ -192,8 +207,8 @@ void setup()
 }
 
 void loop()
-{ 
-  if(Serial.available())
+{
+  if (Serial.available())
     menu.update(Serial.read());
 
   discoverer.update();
@@ -211,8 +226,8 @@ bool menu_StartDiscovery(char c, void* pData)
 bool menu_ListDiscovered(char c, void* pData)
 {
   RokuDiscover* pDiscover = (RokuDiscover*)pData;
-  
-  for(uint8_t i = 0; i < pDiscover->getNumDiscovered(); i++)
+
+  for (uint8_t i = 0; i < pDiscover->getNumDiscovered(); i++)
   {
     RokuInfo* pInfo = pDiscover->getRokuInfo(i);
     Serial.print((int)i); Serial.print(") "); Serial.println(pInfo->USN);
@@ -221,4 +236,39 @@ bool menu_ListDiscovered(char c, void* pData)
   }
 
   return false;
+}
+
+bool menu_SelectRoku(char c, void* pData)
+{
+  static char numBuf[8] = {0};
+  static uint8_t index = 0;
+  SelectRoku* pSelect = (SelectRoku*)pData;
+
+  if (c != '\0')
+  {
+    if (c == '\r')
+    {
+      int selection = atoi(numBuf);
+      
+      if (numBuf[0] != '\0' && selection >= 0 && selection < pSelect->pDiscover->getNumDiscovered())
+      {
+        
+      }
+      else
+        Serial.println("Invalid selection");
+
+      index = 0;
+      memset(numBuf, 0, sizeof(numBuf));
+      return false;
+    }
+    else if(c == '\b')
+    {
+      if(index > 0)
+        index--;
+    }
+    else
+      numBuf[index++] = c;
+  }
+
+  return true;
 }
