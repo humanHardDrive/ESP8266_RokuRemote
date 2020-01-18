@@ -2,6 +2,7 @@
 #include <string>
 
 #include "NetworkHelper.h"
+#include "SimpleMenu.h"
 #include "RokuDiscover.h"
 #include "Roku.h"
 
@@ -29,6 +30,18 @@ bool bConnectedToAP = false;
 ConnectionInfo savedConnectionInfo;
 NetworkHelper helper(sHelperNetworkServerName);
 RokuDiscover discoverer;
+
+bool menu_StartDiscovery(char c, void* pData);
+bool menu_ListDiscovered(char c, void* pData);
+
+MenuOption optionList[] =
+{
+  {'d', "Start Discovery", menu_StartDiscovery, &discoverer},
+  {'l', "List discovered", menu_ListDiscovered, &discoverer},
+  {'\0', "", NULL, NULL}
+};
+
+SimpleMenu menu(optionList);
 
 void UpdateConnectionInfo(const char* ssid, const char* password)
 {
@@ -174,36 +187,38 @@ void setup()
 
   //Start the network helper
   helper.start();
+
+  menu.showMenu();
 }
 
 void loop()
 { 
   if(Serial.available())
-  {
-    switch(Serial.read())
-    {
-      case 'D':
-      case 'd':
-      if(!discoverer.isInDiscovery())
-      {
-        Serial.println("Starting discovery...");
-        discoverer.startDiscovery(5000);
-      }
-      break;
-
-      case 'L':
-      case 'l':
-      for(uint8_t i = 0; i < discoverer.getNumDiscovered(); i++)
-      {
-        RokuInfo* pRokuInfo = discoverer.getRokuInfo(i);
-        Serial.println(pRokuInfo->USN);
-        Serial.print(pRokuInfo->address); Serial.print(':'); Serial.println(pRokuInfo->port);
-        Serial.println();
-      }
-      break;
-    }
-  }
+    menu.update(Serial.read());
 
   discoverer.update();
   helper.background();
+}
+
+/*Menu Functions*/
+bool menu_StartDiscovery(char c, void* pData)
+{
+  Serial.println("Starting discovery...");
+  ((RokuDiscover*)pData)->startDiscovery(5000);
+  return false;
+}
+
+bool menu_ListDiscovered(char c, void* pData)
+{
+  RokuDiscover* pDiscover = (RokuDiscover*)pData;
+  
+  for(uint8_t i = 0; i < pDiscover->getNumDiscovered(); i++)
+  {
+    RokuInfo* pInfo = pDiscover->getRokuInfo(i);
+    Serial.print((int)i); Serial.print(") "); Serial.println(pInfo->USN);
+    Serial.print(pInfo->address); Serial.print(':'); Serial.println(pInfo->port);
+    Serial.println();
+  }
+
+  return false;
 }
