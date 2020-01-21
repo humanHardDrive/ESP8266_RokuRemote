@@ -1,5 +1,5 @@
-#ifndef __SIMPLE_MENU_H__
-#define __SIMPLE_MENU_H__
+#ifndef __CONSOLE_MENU_H__
+#define __CONSOLE_MENU_H__
 
 struct MenuOption
 {
@@ -10,10 +10,10 @@ struct MenuOption
   void* pData;
 };
 
-class SimpleMenu
+class ConsoleMenu
 {
   public:
-    SimpleMenu(MenuOption* pOptionList);
+    ConsoleMenu(MenuOption* pOptionList);
 
     void update(char c);
 

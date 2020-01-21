@@ -1,8 +1,8 @@
-#include "SimpleMenu.h"
+#include "ConsoleMenu.h"
 
 #include <Arduino.h>
 
-SimpleMenu::SimpleMenu(MenuOption* pOptionList) :
+ConsoleMenu::ConsoleMenu(MenuOption* pOptionList) :
   m_pOptionList(pOptionList),
   m_pOptionFn(NULL),
   m_pOptionData(NULL)
@@ -10,7 +10,7 @@ SimpleMenu::SimpleMenu(MenuOption* pOptionList) :
 
 }
 
-void SimpleMenu::update(char c)
+void ConsoleMenu::update(char c)
 {
   /*Handle the catchall cases first*/
   if (c == '\e') /*Escape*/
@@ -36,12 +36,12 @@ void SimpleMenu::update(char c)
     doMenu(c);
 }
 
-void SimpleMenu::clearScreen()
+void ConsoleMenu::clearScreen()
 {
   Serial.print("\e[2J");
 }
 
-void SimpleMenu::doMenu(char c)
+void ConsoleMenu::doMenu(char c)
 {
   MenuOption* pOption = m_pOptionList;
 
@@ -74,7 +74,7 @@ void SimpleMenu::doMenu(char c)
   }
 }
 
-void SimpleMenu::showMenu()
+void ConsoleMenu::showMenu()
 {
   MenuOption* pOption = m_pOptionList;
 

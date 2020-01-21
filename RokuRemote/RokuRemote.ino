@@ -2,7 +2,7 @@
 #include <string>
 
 #include "NetworkHelper.h"
-#include "SimpleMenu.h"
+#include "ConsoleMenu.h"
 #include "RokuDiscover.h"
 #include "Roku.h"
 
@@ -11,14 +11,21 @@ IPAddress local_IP(192, 168, 1, 1);
 IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 
-//Structure for saving the connection info to be recovred on startup
-struct ConnectionInfo
+/*Data stored in flash separate from the checksum*/
+struct SAVE_DATA_DATA
 {
   char SSID[32];
   char password[32];
 
   byte rokuIP[4];
   uint16_t rokuPort;
+};
+
+/*This separates the data from the checksum to avoid magic
+  nubmers during calculation*/
+struct SAVE_DATA
+{
+  SAVE_DATA_DATA data;
 
   uint16_t checksum;
 };
@@ -27,7 +34,7 @@ struct SelectRoku
 {
   RokuDiscover* pDiscover;
   Roku* pRoku;
-  ConnectionInfo* pInfo;  
+  SAVE_DATA* pInfo;
 };
 
 const char* sHelperNetworkServerName = "networkhelper"; //Name for the DNS
@@ -37,12 +44,12 @@ const char* sHelperNetworkPassword = ""; //AP Password
 
 bool bConnectedToAP = false;
 
-ConnectionInfo savedConnectionInfo;
+SAVE_DATA saveData, saveDataMirror;
 NetworkHelper helper(sHelperNetworkServerName);
 RokuDiscover discoverer;
 Roku roku;
 
-SelectRoku selectData = {&discoverer, &roku, &savedConnectionInfo};
+SelectRoku selectData = {&discoverer, &roku, &saveData};
 
 bool menu_StartDiscovery(char c, void* pData);
 bool menu_ListDiscovered(char c, void* pData);
@@ -53,36 +60,52 @@ MenuOption optionList[] =
   {'d', "Start Discovery", menu_StartDiscovery, &discoverer},
   {'l', "List discovered", menu_ListDiscovered, &discoverer},
   {'s', "Select Roku", menu_SelectRoku, &selectData},
-  {'\0', "", NULL, NULL}
+  {'c', "Connection info", NULL, NULL},
+  {'q', "Save", NULL, NULL},
+  {'r', "Reset settings", NULL, NULL},
+  {'\0', "", NULL, NULL} /*End of list*/
 };
 
-SimpleMenu menu(optionList);
+ConsoleMenu menu(optionList);
 
-void UpdateConnectionInfo(const char* ssid, const char* password)
-{
-  strcpy(savedConnectionInfo.SSID, ssid);
-  strcpy(savedConnectionInfo.password, password);
-  savedConnectionInfo.checksum = CalcConnectionInfoChecksum(&savedConnectionInfo);
-
-  EEPROM.put(0, savedConnectionInfo);
-}
-
-bool isSavedInfoValid(ConnectionInfo* info)
-{
-  //Verify that the stored checksum matches the data
-  uint16_t checksum = CalcConnectionInfoChecksum(info);
-
-  return (checksum == info->checksum);
-}
-
-uint16_t CalcConnectionInfoChecksum(ConnectionInfo* info)
+uint16_t calcDataChecksum(SAVE_DATA* pData)
 {
   uint16_t checksum = 0;
 
-  for (uint16_t i = 0; i < sizeof(ConnectionInfo) - sizeof(checksum); i++)
-    checksum += ((char*)info)[i];
+  for (size_t i = 0; i < sizeof(SAVE_DATA_DATA); i++)
+    checksum += ((uint8_t*)&pData->data)[i];
 
   return checksum;
+}
+
+void save()
+{
+  if (memcmp(&saveData, &saveDataMirror, sizeof(SAVE_DATA)))
+  {
+    saveData.checksum = calcDataChecksum(&saveData);
+
+    EEPROM.put(0, saveData);
+    memcpy(&saveDataMirror, &saveData, sizeof(SAVE_DATA));
+  }
+}
+
+bool recoverSavedData()
+{
+  if (EEPROM.get(0, saveDataMirror))
+  {
+    Serial.println("Got data from flash");
+    if (calcDataChecksum(&saveDataMirror) == saveDataMirror.checksum)
+    {
+      Serial.println("Checksums match");
+      memcpy(&saveData, &saveDataMirror, sizeof(SAVE_DATA));
+      return true;
+    }
+    else
+      Serial.println("Invalid checksum");
+
+  }
+  else
+    Serial.println("Failed to retrieve saved data from flash");
 }
 
 void Cleanup()
@@ -117,40 +140,31 @@ void SoftReset()
   //Everyone afterwards does
 }
 
-void ResetConnectionInfo(ConnectionInfo* info)
-{
-  memset(info, 0, sizeof(ConnectionInfo));
-  EEPROM.put(0, *info);
-}
-
 void setup()
 {
   delay(1000);
 
-  EEPROM.begin(sizeof(ConnectionInfo));
+  EEPROM.begin(sizeof(SAVE_DATA));
 
   Serial.begin(115200);
   Serial.println();
 
   //Recover connection info
-  EEPROM.get(0, savedConnectionInfo);
   WiFi.persistent(false);
 
-#ifndef DONT_REMEMBER
-  if (isSavedInfoValid(&savedConnectionInfo) &&
-      strlen(savedConnectionInfo.SSID))
+  if (recoverSavedData() && strlen(saveData.SSID))
   {
     Serial.println("Saved info checksum matches");
     Serial.println("Connecting to...");
-    Serial.print("SSID: "); Serial.println(savedConnectionInfo.SSID);
-    Serial.print("Password: "); Serial.println(savedConnectionInfo.password);
+    Serial.print("SSID: "); Serial.println(saveData.SSID);
+    Serial.print("Password: "); Serial.println(saveData.password);
 
     WiFi.mode(WIFI_STA);
 
-    if (strlen(savedConnectionInfo.password))
-      WiFi.begin(savedConnectionInfo.SSID, savedConnectionInfo.password);
+    if (strlen(saveData.password))
+      WiFi.begin(saveData.SSID, saveData.password);
     else
-      WiFi.begin(savedConnectionInfo.SSID);
+      WiFi.begin(saveData.SSID);
 
     uint32_t connectionAttemptStart = millis();
     while (WiFi.status() != WL_CONNECTED &&
@@ -170,17 +184,12 @@ void setup()
   }
   else
     Serial.println("Connection info checksum doesn't match OR SSID not valid");
-#endif
 
   if (!bConnectedToAP)
   {
     Serial.println("Creating AP");
     Serial.print("SSID: ");
     Serial.println(sHelperNetworkSSID);
-
-#ifndef DONT_REMEMBER
-    ResetConnectionInfo(&savedConnectionInfo);
-#endif
 
     WiFi.mode(WIFI_AP);
     WiFi.softAPConfig(local_IP, gateway, subnet);
@@ -195,7 +204,8 @@ void setup()
     [](String ssid, String password)
   {
     //Update the connection info in EEPROM
-    UpdateConnectionInfo(ssid.c_str(), password.c_str());
+    strcpy(saveData.SSID, ssid.c_str());
+    strcpy(saveData.password, password.c_str());
     //Use the watchdog to reset the device
     SoftReset();
   });
@@ -249,10 +259,10 @@ bool menu_SelectRoku(char c, void* pData)
     if (c == '\r')
     {
       int selection = atoi(numBuf);
-      
+
       if (numBuf[0] != '\0' && selection >= 0 && selection < pSelect->pDiscover->getNumDiscovered())
       {
-        
+
       }
       else
         Serial.println("Invalid selection");
@@ -261,9 +271,9 @@ bool menu_SelectRoku(char c, void* pData)
       memset(numBuf, 0, sizeof(numBuf));
       return false;
     }
-    else if(c == '\b')
+    else if (c == '\b')
     {
-      if(index > 0)
+      if (index > 0)
         index--;
     }
     else
