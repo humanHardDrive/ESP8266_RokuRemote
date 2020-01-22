@@ -10,16 +10,20 @@ class Roku
 {
   public:
     Roku();
-    Roku(uint8_t* pIP, uint16_t port);
+    Roku(IPAddress address, uint16_t port);
 
-    void connect(uint8_t* pIP, uint16_t port);
+    void connect();
+    void connect(IPAddress address, uint16_t port);
+    void disconnect();
 
     void update();
 
-    bool isConnected();
+    bool isConnected() {
+      return m_Client.connected();
+    }
 
   private:
-    uint8_t m_IP[4];
+    IPAddress m_Address;
     uint16_t m_Port;
 
     WiFiClient m_Client;
