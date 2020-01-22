@@ -91,21 +91,16 @@ void save()
 
 bool recoverSavedData()
 {
-  if (EEPROM.get(0, saveDataMirror))
-  {
-    Serial.println("Got data from flash");
-    if (calcDataChecksum(&saveDataMirror) == saveDataMirror.checksum)
-    {
-      Serial.println("Checksums match");
-      memcpy(&saveData, &saveDataMirror, sizeof(SAVE_DATA));
-      return true;
-    }
-    else
-      Serial.println("Invalid checksum");
+  EEPROM.get(0, saveDataMirror);
 
+  if (calcDataChecksum(&saveDataMirror) == saveDataMirror.checksum)
+  {
+    Serial.println("Checksums match");
+    memcpy(&saveData, &saveDataMirror, sizeof(SAVE_DATA));
+    return true;
   }
   else
-    Serial.println("Failed to retrieve saved data from flash");
+    Serial.println("Invalid checksum");
 }
 
 void Cleanup()
@@ -152,19 +147,20 @@ void setup()
   //Recover connection info
   WiFi.persistent(false);
 
-  if (recoverSavedData() && strlen(saveData.SSID))
+  bool bRecovered = recoverSavedData();
+  if (bRecovered && saveData.data.SSID[0])
   {
     Serial.println("Saved info checksum matches");
     Serial.println("Connecting to...");
-    Serial.print("SSID: "); Serial.println(saveData.SSID);
-    Serial.print("Password: "); Serial.println(saveData.password);
+    Serial.print("SSID: "); Serial.println(saveData.data.SSID);
+    Serial.print("Password: "); Serial.println(saveData.data.password);
 
     WiFi.mode(WIFI_STA);
 
-    if (strlen(saveData.password))
-      WiFi.begin(saveData.SSID, saveData.password);
+    if (saveData.data.password[0])
+      WiFi.begin(saveData.data.SSID, saveData.data.password);
     else
-      WiFi.begin(saveData.SSID);
+      WiFi.begin(saveData.data.SSID);
 
     uint32_t connectionAttemptStart = millis();
     while (WiFi.status() != WL_CONNECTED &&
@@ -182,8 +178,10 @@ void setup()
       Serial.print("IP address: "); Serial.println(WiFi.localIP());
     }
   }
+  else if(bRecovered)
+    Serial.println("SSID is emtpy");
   else
-    Serial.println("Connection info checksum doesn't match OR SSID not valid");
+    Serial.println("Failed to recover data from flash");
 
   if (!bConnectedToAP)
   {
@@ -204,8 +202,8 @@ void setup()
     [](String ssid, String password)
   {
     //Update the connection info in EEPROM
-    strcpy(saveData.SSID, ssid.c_str());
-    strcpy(saveData.password, password.c_str());
+    strcpy(saveData.data.SSID, ssid.c_str());
+    strcpy(saveData.data.password, password.c_str());
     //Use the watchdog to reset the device
     SoftReset();
   });
