@@ -101,6 +101,8 @@ bool recoverSavedData()
   }
   else
     Serial.println("Invalid checksum");
+
+  return false;
 }
 
 void Cleanup()
@@ -114,7 +116,8 @@ void Cleanup()
   else
     //Or stop the current access point
     WiFi.softAPdisconnect (true);
-
+  
+  save();
   EEPROM.end();
 
   //Let the EEPROM commit to flash
