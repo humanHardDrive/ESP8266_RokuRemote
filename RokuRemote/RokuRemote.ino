@@ -272,7 +272,11 @@ bool menu_SelectRoku(char c, void* pData)
 
       if (numBuf[0] != '\0' && selection >= 0 && selection < pSelect->pDiscover->getNumDiscovered())
       {
-
+        RokuInfo* pInfo = pSelect->pDiscover->getRokuInfo(selection);
+        uint32_t addr = uint32_t(pInfo->address);
+        
+        memcpy(pSelect->pInfo->data.rokuIP, &addr, sizeof(uint32_t));
+        pSelect->pInfo->data.rokuPort = pInfo->port;
       }
       else
         Serial.println("Invalid selection");
