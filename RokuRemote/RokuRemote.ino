@@ -54,14 +54,17 @@ SelectRoku selectData = {&discoverer, &roku, &saveData};
 bool menu_StartDiscovery(char c, void* pData);
 bool menu_ListDiscovered(char c, void* pData);
 bool menu_SelectRoku(char c, void* pData);
+bool menu_ConnectionInfo(char c, void* pData);
+bool menu_Save(char c, void* pData);
+bool menu_ResetSettings(char c, void* pData);
 
 MenuOption optionList[] =
 {
   {'d', "Start Discovery", menu_StartDiscovery, &discoverer},
   {'l', "List discovered", menu_ListDiscovered, &discoverer},
   {'s', "Select Roku", menu_SelectRoku, &selectData},
-  {'c', "Connection info", NULL, NULL},
-  {'q', "Save", NULL, NULL},
+  {'c', "Connection info", menu_ConnectionInfo, &saveData},
+  {'q', "Save", menu_Save, NULL},
   {'r', "Reset settings", NULL, NULL},
   {'\0', "", NULL, NULL} /*End of list*/
 };
@@ -82,11 +85,14 @@ void save()
 {
   if (memcmp(&saveData, &saveDataMirror, sizeof(SAVE_DATA)))
   {
+    Serial.println("Saving");
     saveData.checksum = calcDataChecksum(&saveData);
 
     EEPROM.put(0, saveData);
     memcpy(&saveDataMirror, &saveData, sizeof(SAVE_DATA));
   }
+  else
+    Serial.println("Data not different");
 }
 
 bool recoverSavedData()
@@ -295,4 +301,23 @@ bool menu_SelectRoku(char c, void* pData)
   }
 
   return true;
+}
+
+bool menu_ConnectionInfo(char c, void* pData)
+{
+  
+  
+  return false;
+}
+
+bool menu_Save(char c, void* pData)
+{
+  save();
+
+  return false;
+}
+
+bool menu_ResetSettings(char c, void* pData)
+{
+  
 }
