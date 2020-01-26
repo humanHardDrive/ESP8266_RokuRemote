@@ -57,6 +57,7 @@ bool menu_SelectRoku(char c, void* pData);
 bool menu_ConnectionInfo(char c, void* pData);
 bool menu_Save(char c, void* pData);
 bool menu_ResetSettings(char c, void* pData);
+bool menu_Reboot(char c, void* pData);
 
 MenuOption optionList[] =
 {
@@ -66,6 +67,7 @@ MenuOption optionList[] =
   {'c', "Connection info", menu_ConnectionInfo, &saveData},
   {'q', "Save", menu_Save, NULL},
   {'r', "Reset settings", NULL, NULL},
+  {'p', "Reboot", menu_Reboot, NULL},
   {'\0', "", NULL, NULL} /*End of list*/
 };
 
@@ -123,7 +125,6 @@ void Cleanup()
     //Or stop the current access point
     WiFi.softAPdisconnect (true);
   
-  save();
   EEPROM.end();
 
   //Let the EEPROM commit to flash
@@ -222,8 +223,6 @@ void setup()
     //Update the connection info in EEPROM
     strcpy(saveData.data.SSID, ssid.c_str());
     strcpy(saveData.data.password, password.c_str());
-    //Use the watchdog to reset the device
-    SoftReset();
   });
 
   //Start the network helper
@@ -319,5 +318,11 @@ bool menu_Save(char c, void* pData)
 
 bool menu_ResetSettings(char c, void* pData)
 {
-  
+  return false;
+}
+
+bool menu_Reboot(char c, void* pData)
+{
+  SoftReset();
+  return false;
 }

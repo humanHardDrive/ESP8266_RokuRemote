@@ -19,13 +19,14 @@ class Roku
     void update();
 
     bool isConnected() {
-      return m_Client.connected();
+      return m_bConnected;
     }
 
   private:
     IPAddress m_Address;
     uint16_t m_Port;
 
+    bool m_bConnected;
     WiFiClient m_Client;
 };
 
