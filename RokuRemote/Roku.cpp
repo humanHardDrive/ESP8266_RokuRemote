@@ -16,36 +16,59 @@ Roku::Roku(IPAddress address, uint16_t port) :
 
 bool Roku::queryApps()
 {
-  WiFiClient client;
-  HTTPClient http;
-  String req;
+  String rsp = query("query/apps");
 
-  req = m_sURL + "query/apps";
-  Serial.println(req);
-  if (m_Port && http.begin(client, req))
+  if (rsp.length())
   {
-    int httpCode = http.GET();
-
-    if (httpCode > 0)
-    {
-      Serial.println(httpCode);
-      Serial.println(http.getString());
-    }
-    else
-      Serial.println(http.errorToString(httpCode));
-
-    http.end();
+    Serial.println(rsp);
     return true;
   }
 
   return false;
 }
 
+bool Roku::queryActiveApp()
+{
+  return false;
+}
+
 void Roku::update()
 {
+  /*Keep the current app up to date*/
+  if ((millis() - m_nLastActiveQueryTime) > 5000)
+  {
+    queryActiveApp();
+    m_nLastActiveQueryTime = millis();
+  }
 }
 
 void Roku::generateURL()
 {
   m_sURL = "http://" + m_Address.toString() + ":" + String(m_Port) + "/";
+}
+
+String Roku::query(String q)
+{
+  WiFiClient client;
+  HTTPClient http;
+  String req, sRetVal = "";
+
+  req = m_sURL + q;
+  Serial.println(req);
+  if (m_Port && http.begin(client, req))
+  {
+    int httpCode = http.GET();
+
+    if (httpCode == HTTP_CODE_OK)
+      sRetVal = http.getString();
+
+    http.end();
+  }
+
+  return sRetVal;
+}
+
+bool Roku::post(String p)
+{
+  return false;
 }

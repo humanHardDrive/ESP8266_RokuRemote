@@ -26,13 +26,18 @@ class Roku
     void update();
 
     bool queryApps();
+    bool queryActiveApp();
 
   private:
     void generateURL();
+    String query(String q);
+    bool post(String p);
   
     IPAddress m_Address;
     uint16_t m_Port;
     String m_sURL;
+
+    uint32_t m_nLastActiveQueryTime;
 };
 
 #endif
