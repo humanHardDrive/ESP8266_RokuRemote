@@ -191,7 +191,10 @@ void setup()
       {
         IPAddress address(*((uint32_t*)saveData.data.rokuIP));
         Serial.print("Connecting to roku "); Serial.print(address); Serial.print(':'); Serial.println(saveData.data.rokuPort);
-        roku.connect(address, saveData.data.rokuPort);
+        roku.setIP(address);
+        roku.setPort(saveData.data.rokuPort);
+
+        roku.queryApps();
       }
       else
         Serial.println("No Roku saved");

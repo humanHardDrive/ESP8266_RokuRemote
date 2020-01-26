@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266HTTPClient.h>
 
 #include <map>
 
@@ -12,22 +14,25 @@ class Roku
     Roku();
     Roku(IPAddress address, uint16_t port);
 
-    void connect();
-    void connect(IPAddress address, uint16_t port);
-    void disconnect();
+    void setIP(IPAddress address) {
+      m_Address = address;
+      generateURL();
+    }
+    void setPort(uint16_t port) {
+      m_Port = port;
+      generateURL();
+    }
 
     void update();
 
-    bool isConnected() {
-      return m_bConnected;
-    }
+    bool queryApps();
 
   private:
+    void generateURL();
+  
     IPAddress m_Address;
     uint16_t m_Port;
-
-    bool m_bConnected;
-    WiFiClient m_Client;
+    String m_sURL;
 };
 
 #endif
