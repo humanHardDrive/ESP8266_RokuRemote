@@ -236,6 +236,7 @@ void loop()
   if (Serial.available())
     menu.update(Serial.read());
 
+  roku.update();
   discoverer.update();
   helper.background();
 }
