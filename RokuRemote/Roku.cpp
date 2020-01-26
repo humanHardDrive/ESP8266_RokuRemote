@@ -29,6 +29,14 @@ bool Roku::queryApps()
 
 bool Roku::queryActiveApp()
 {
+  String rsp = query("query/active-app");
+
+  if(rsp.length())
+  {
+    Serial.println(rsp);
+    return true;
+  }
+
   return false;
 }
 
