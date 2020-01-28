@@ -1,5 +1,6 @@
 #include "Roku.h"
 #include <string>
+#include <TinyXML.h>
 
 Roku::Roku() :
   m_Port(0),
