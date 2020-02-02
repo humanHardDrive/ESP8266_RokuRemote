@@ -1,10 +1,19 @@
 #include "Roku.h"
 #include <string>
 
+void XMLCallback(uint8_t statusFlags, char* pTagName, uint16_t tagNameSize, char* pData, uint16_t dataSize)
+{
+  Serial.print("Flags: "); Serial.println((int)statusFlags);
+  Serial.println(pTagName);
+  Serial.println(pData);
+  Serial.println();
+}
+
 Roku::Roku() :
   m_Port(0),
   m_sURL("")
 {
+  m_XMLParser.init((uint8_t*)m_XMLBuffer, sizeof(m_XMLBuffer), XMLCallback);
 }
 
 Roku::Roku(IPAddress address, uint16_t port) :
@@ -16,28 +25,12 @@ Roku::Roku(IPAddress address, uint16_t port) :
 
 bool Roku::queryApps()
 {
-  String rsp = query("query/apps");
-
-  if (rsp.length())
-  {
-    Serial.println(rsp);
-    return true;
-  }
-
-  return false;
+  return query("query/apps");
 }
 
 bool Roku::queryActiveApp()
 {
-  String rsp = query("query/active-app");
-
-  if(rsp.length())
-  {
-    Serial.println(rsp);
-    return true;
-  }
-
-  return false;
+  return query("query/active-app");
 }
 
 void Roku::update()
@@ -55,14 +48,13 @@ void Roku::generateURL()
   m_sURL = "http://" + m_Address.toString() + ":" + String(m_Port) + "/";
 }
 
-String Roku::query(String q)
+bool Roku::query(String q)
 {
   WiFiClient client;
   HTTPClient http;
   String req, sRetVal = "";
 
   req = m_sURL + q;
-  Serial.println(req);
   if (m_Port && http.begin(client, req))
   {
     int httpCode = http.GET();
@@ -71,9 +63,15 @@ String Roku::query(String q)
       sRetVal = http.getString();
 
     http.end();
+
+    Serial.println(sRetVal);
+    for (uint16_t i = 0; i < sRetVal.length(); i++)
+      m_XMLParser.processChar(sRetVal.c_str()[i]);
+
+    return true;
   }
 
-  return sRetVal;
+  return false;
 }
 
 bool Roku::post(String p)

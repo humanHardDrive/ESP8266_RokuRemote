@@ -5,6 +5,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266HTTPClient.h>
+#include "TinyXML.h"
 
 #include <map>
 
@@ -30,13 +31,17 @@ class Roku
 
   private:
     void generateURL();
-    String query(String q);
+    bool query(String q);
     bool post(String p);
   
     IPAddress m_Address;
     uint16_t m_Port;
     String m_sURL;
 
+    XMLcallback m_XMLCallback;
+    TinyXML m_XMLParser;
+    char m_XMLBuffer[128];
+  
     uint32_t m_nLastActiveQueryTime;
 };
 
