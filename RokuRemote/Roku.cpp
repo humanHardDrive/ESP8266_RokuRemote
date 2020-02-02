@@ -1,5 +1,6 @@
 #include "Roku.h"
 #include <string>
+#include <TinyXML.h>
 
 void XMLCallback(uint8_t statusFlags, char* pTagName, uint16_t tagNameSize, char* pData, uint16_t dataSize)
 {
