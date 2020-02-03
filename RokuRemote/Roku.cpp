@@ -1,6 +1,11 @@
 #include "Roku.h"
 #include <string>
-#include <TinyXML.h>
+
+std::map<String, uint8_t> Roku::PATH_TO_MSG_ID = 
+{
+  {"apps", 0},
+  {"active-app", 1}
+};
 
 void XMLCallback(uint8_t statusFlags, char* pTagName, uint16_t tagNameSize, char* pData, uint16_t dataSize)
 {
@@ -78,4 +83,20 @@ bool Roku::query(String q)
 bool Roku::post(String p)
 {
   return false;
+}
+
+void pathSplit(char* s, char* sFirst, char* sLast)
+{
+  uint16_t i = 0;
+  
+  while(*s && *s != '/')
+  {    
+    sFirst[i] = *s;
+    
+    i++;
+    s++;
+  }
+
+  sFirst[i] = '\0'; //Append null terminator
+  strcpy(sLast, s);
 }

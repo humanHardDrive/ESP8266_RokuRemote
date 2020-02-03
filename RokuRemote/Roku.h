@@ -33,7 +33,9 @@ class Roku
     void generateURL();
     bool query(String q);
     bool post(String p);
-  
+
+    void pathSplit(char* s, char* sFirst, char* sLast);
+      
     IPAddress m_Address;
     uint16_t m_Port;
     String m_sURL;
@@ -43,6 +45,8 @@ class Roku
     char m_XMLBuffer[128];
   
     uint32_t m_nLastActiveQueryTime;
+
+    static std::map<String, uint8_t> PATH_TO_MSG_ID;
 };
 
 #endif
