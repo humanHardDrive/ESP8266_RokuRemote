@@ -1,16 +1,44 @@
 #include "Roku.h"
 #include <string>
 
-std::map<String, uint8_t> Roku::PATH_TO_MSG_ID = 
+std::map<String, uint8_t> Roku::PATH_TO_MSG_ID =
 {
   {"apps", 0},
   {"active-app", 1}
 };
 
+void pathSplit(char* s, char* sFirst, char* sLast)
+{
+  uint16_t i = 0;
+
+  while (*s && *s != '/')
+  {
+    sFirst[i] = *s;
+
+    i++;
+    s++;
+  }
+
+  sFirst[i] = '\0'; //Append null terminator
+  sLast[0] = '\0';
+
+  if (*s == '/')
+    strcpy(sLast, s + 1);
+}
+
 void XMLCallback(uint8_t statusFlags, char* pTagName, uint16_t tagNameSize, char* pData, uint16_t dataSize)
 {
+  char first[128], last[128];
+  pathSplit(pTagName + 1, first, last);
+
   Serial.print("Flags: "); Serial.println((int)statusFlags);
-  Serial.println(pTagName);
+  if (statusFlags == 1)
+  {
+    Serial.print(first); Serial.print(' '); Serial.println(last);
+  }
+  else
+    Serial.println(pTagName);
+
   Serial.println(pData);
   Serial.println();
 }
@@ -83,20 +111,4 @@ bool Roku::query(String q)
 bool Roku::post(String p)
 {
   return false;
-}
-
-void pathSplit(char* s, char* sFirst, char* sLast)
-{
-  uint16_t i = 0;
-  
-  while(*s && *s != '/')
-  {    
-    sFirst[i] = *s;
-    
-    i++;
-    s++;
-  }
-
-  sFirst[i] = '\0'; //Append null terminator
-  strcpy(sLast, s);
 }
