@@ -59,12 +59,32 @@ Roku::Roku(IPAddress address, uint16_t port) :
 
 bool Roku::queryApps()
 {
-  return query("query/apps");
+  if (query("query/apps"))
+  {
+    m_ParseFn = std::bind(&Roku::parseApps, this, std::placeholders::_1);
+    return true;
+  }
+
+  return false;
+}
+
+void Roku::parseApps(const char* s)
+{
 }
 
 bool Roku::queryActiveApp()
 {
-  return query("query/active-app");
+  if(query("query/active-app"))
+  {
+    m_ParseFn = std::bind(&Roku::parseActiveApp, this, std::placeholders::_1);
+    return true;
+  }
+
+  return false;
+}
+
+void Roku::parseActiveApp(const char* s)
+{
 }
 
 void Roku::update()
@@ -99,8 +119,8 @@ bool Roku::query(String q)
     http.end();
 
     Serial.println(sRetVal);
-    for (uint16_t i = 0; i < sRetVal.length(); i++)
-      m_XMLParser.processChar(sRetVal.c_str()[i]);
+    if(m_ParseFn)
+      m_ParseFn(sRetVal.c_str());
 
     return true;
   }

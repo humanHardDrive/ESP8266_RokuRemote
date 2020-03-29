@@ -8,6 +8,7 @@
 #include "TinyXML.h"
 
 #include <map>
+#include <functional>
 
 class Roku
 {
@@ -33,6 +34,9 @@ class Roku
     void generateURL();
     bool query(String q);
     bool post(String p);
+
+    void parseApps(const char* s);
+    void parseActiveApp(const char* s);
       
     IPAddress m_Address;
     uint16_t m_Port;
@@ -44,6 +48,9 @@ class Roku
   
     uint32_t m_nLastActiveQueryTime;
 
+    std::function<void(const char*)> m_ParseFn;
+
+    std::map<String, uint16_t> m_AppIdMap;
     static std::map<String, uint8_t> PATH_TO_MSG_ID;
 };
 
