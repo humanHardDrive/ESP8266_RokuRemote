@@ -2,7 +2,6 @@
 #include <string>
 
 #include "NetworkHelper.h"
-#include "ConsoleMenu.h"
 #include "RokuDiscover.h"
 #include "Roku.h"
 
@@ -30,13 +29,6 @@ struct SAVE_DATA
   uint16_t checksum;
 };
 
-struct SelectRoku
-{
-  RokuDiscover* pDiscover;
-  Roku* pRoku;
-  SAVE_DATA* pInfo;
-};
-
 const char* sHelperNetworkServerName = "networkhelper"; //Name for the DNS
 const char* sHelperNetworkSSID = "esp8266"; //AP SSID
 const char* sHelperNetworkPassword = ""; //AP Password
@@ -48,30 +40,6 @@ SAVE_DATA saveData, saveDataMirror;
 NetworkHelper helper(sHelperNetworkServerName);
 RokuDiscover discoverer;
 Roku roku;
-
-SelectRoku selectData = {&discoverer, &roku, &saveData};
-
-bool menu_StartDiscovery(char c, void* pData);
-bool menu_ListDiscovered(char c, void* pData);
-bool menu_SelectRoku(char c, void* pData);
-bool menu_ConnectionInfo(char c, void* pData);
-bool menu_Save(char c, void* pData);
-bool menu_ResetSettings(char c, void* pData);
-bool menu_Reboot(char c, void* pData);
-
-MenuOption optionList[] =
-{
-  {'d', "Start Discovery", menu_StartDiscovery, &discoverer},
-  {'l', "List discovered", menu_ListDiscovered, &discoverer},
-  {'s', "Select Roku", menu_SelectRoku, &selectData},
-  {'c', "Connection info", menu_ConnectionInfo, &saveData},
-  {'q', "Save", menu_Save, NULL},
-  {'r', "Reset settings", NULL, NULL},
-  {'p', "Reboot", menu_Reboot, NULL},
-  {'\0', "", NULL, NULL} /*End of list*/
-};
-
-ConsoleMenu menu(optionList);
 
 uint16_t calcDataChecksum(SAVE_DATA* pData)
 {
@@ -230,103 +198,11 @@ void setup()
 
   //Start the network helper
   helper.start();
-
-  menu.showMenu();
 }
 
 void loop()
 {
-  if (Serial.available())
-    menu.update(Serial.read());
-
   roku.update();
   discoverer.update();
   helper.background();
-}
-
-/*Menu Functions*/
-bool menu_StartDiscovery(char c, void* pData)
-{
-  Serial.println("Starting discovery...");
-  ((RokuDiscover*)pData)->startDiscovery(5000);
-  return false;
-}
-
-bool menu_ListDiscovered(char c, void* pData)
-{
-  RokuDiscover* pDiscover = (RokuDiscover*)pData;
-
-  for (uint8_t i = 0; i < pDiscover->getNumDiscovered(); i++)
-  {
-    RokuInfo* pInfo = pDiscover->getRokuInfo(i);
-    Serial.print((int)i); Serial.print(") "); Serial.println(pInfo->USN);
-    Serial.print(pInfo->address); Serial.print(':'); Serial.println(pInfo->port);
-    Serial.println();
-  }
-
-  return false;
-}
-
-bool menu_SelectRoku(char c, void* pData)
-{
-  static char numBuf[8] = {0};
-  static uint8_t index = 0;
-  SelectRoku* pSelect = (SelectRoku*)pData;
-
-  if (c != '\0')
-  {
-    if (c == '\r')
-    {
-      int selection = atoi(numBuf);
-
-      if (numBuf[0] != '\0' && selection >= 0 && selection < pSelect->pDiscover->getNumDiscovered())
-      {
-        RokuInfo* pInfo = pSelect->pDiscover->getRokuInfo(selection);
-        uint32_t addr = uint32_t(pInfo->address);
-        
-        memcpy(pSelect->pInfo->data.rokuIP, &addr, sizeof(uint32_t));
-        pSelect->pInfo->data.rokuPort = pInfo->port;
-      }
-      else
-        Serial.println("Invalid selection");
-
-      index = 0;
-      memset(numBuf, 0, sizeof(numBuf));
-      return false;
-    }
-    else if (c == '\b')
-    {
-      if (index > 0)
-        index--;
-    }
-    else
-      numBuf[index++] = c;
-  }
-
-  return true;
-}
-
-bool menu_ConnectionInfo(char c, void* pData)
-{
-  
-  
-  return false;
-}
-
-bool menu_Save(char c, void* pData)
-{
-  save();
-
-  return false;
-}
-
-bool menu_ResetSettings(char c, void* pData)
-{
-  return false;
-}
-
-bool menu_Reboot(char c, void* pData)
-{
-  SoftReset();
-  return false;
 }
