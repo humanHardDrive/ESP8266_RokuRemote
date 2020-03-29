@@ -32,7 +32,7 @@ void XMLCallback(uint8_t statusFlags, char* pTagName, uint16_t tagNameSize, char
   pathSplit(pTagName + 1, first, last);
 
   Serial.print("Flags: "); Serial.println((int)statusFlags);
-  if (statusFlags == 1)
+  if (statusFlags & STATUS_START_TAG)
   {
     Serial.print(first); Serial.print(' '); Serial.println(last);
   }
@@ -99,6 +99,7 @@ bool Roku::query(String q)
     http.end();
 
     Serial.println(sRetVal);
+    parseData((char*)sRetVal.c_str());
     for (uint16_t i = 0; i < sRetVal.length(); i++)
       m_XMLParser.processChar(sRetVal.c_str()[i]);
 
@@ -111,4 +112,11 @@ bool Roku::query(String q)
 bool Roku::post(String p)
 {
   return false;
+}
+
+void Roku::parseData(char* pData)
+{
+  if(*pData)
+  {
+  }
 }

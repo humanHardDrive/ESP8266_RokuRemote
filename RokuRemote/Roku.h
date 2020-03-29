@@ -33,6 +33,8 @@ class Roku
     void generateURL();
     bool query(String q);
     bool post(String p);
+
+    void parseData(char* pData);
       
     IPAddress m_Address;
     uint16_t m_Port;
